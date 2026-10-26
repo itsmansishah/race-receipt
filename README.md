@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Race Receipt
 
-## Getting Started
-
-First, run the development server:
+A product customizer for personalised, thermal-receipt-style marathon prints. Prototype: customizer, live preview and a placeholder order summary. Payments and fulfilment are not connected.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev        # http://localhost:3000
+npm test           # Vitest: state, time, barcode, dither
+npm run typecheck
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Structure
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  page.tsx              customizer
+  print/page.tsx        watermarked proof at true physical size (print / save as PDF)
+  fonts/                Space Mono + Space Grotesk, self-hosted (OFL)
+components/
+  Customizer.tsx        layout, sticky order bar, fit state
+  CustomizerForm.tsx    form sections 01–07
+  ReceiptItemManager.tsx  add / edit / reorder (drag, keyboard, arrows) / delete, 15-item cap
+  ReceiptPreview.tsx    "Receipt" and "On the wall" views, fit-to-size warnings
+  receipt/ReceiptStrip.tsx  the receipt itself (shared by preview and proof)
+  receipt/PrintSheet.tsx    backing sheet, frame, mat, watermark
+  receipt/PaperTexture.tsx  grain, ink gaps, dropped lines (SVG, generated)
+  Barcode.tsx           Code 128B as SVG
+  RouteMap.tsx          dotted route on a dot grid
+  PhotoDropzone.tsx     consent, upload, live dithering
+lib/
+  receipt-state.ts      the single typed ReceiptState, reducer, validation
+  time.ts  barcode.ts  dither.ts  route.ts  print-sizes.ts  persistence.ts  tokens.ts
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## How the preview stays honest
 
-## Learn More
+The receipt is laid out once in canvas units (sheet = 1000u wide, strip = 380u).
+After every change the strip's natural height is measured. If it is taller than
+the sheet allows, the strip is scaled down to fit and a warning is shown; below
+75% checkout is blocked. The preview and `/print` render the same components,
+so the proof matches the preview.
 
-To learn more about Next.js, take a look at the following resources:
+## Plugging in real routes
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+`RouteSource` is `sample | library | drawn | gpx`. Each resolves to points in
+`lib/route.ts`, which `normalizePoints` fits to the hero box. To add a source,
+add a case to `rawPoints`. `RouteMap` doesn't change.

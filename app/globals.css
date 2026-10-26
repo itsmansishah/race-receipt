@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
+/* Tokens: mirrored in lib/tokens.ts */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #2a2019;
+  --ink-soft: #6b5d52;
+  --paper: #f4efe4;
+  --sheet: #ebe5d8;
+  --app-bg: #e7e1d4;
+  --panel: #f7f3ea;
+  --line: #cfc5b3;
+  --spot-red: #e2432d;
+  --spot-blue: #2f56b0;
+  --focus: #2f56b0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-paper: var(--paper);
+  --color-sheet: var(--sheet);
+  --color-app: var(--app-bg);
+  --color-panel: var(--panel);
+  --color-line: var(--line);
+  --color-spot: var(--spot-red);
+  --color-spot-blue: var(--spot-blue);
+  --font-mono: var(--font-space-mono), ui-monospace, monospace;
+  --font-display: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--app-bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Small caps with wide tracking, as in "D I Y  C O U R S E" */
+.caps-wide {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.32em;
+}
+
+/* Hazard-stripe divider, used in the app chrome and on the receipt */
+.hazard {
+  background-image: repeating-linear-gradient(-45deg, var(--ink) 0 5px, transparent 5px 10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    background: white;
+  }
 }
