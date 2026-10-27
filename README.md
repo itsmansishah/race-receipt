@@ -1,11 +1,14 @@
 # Race Receipt
 
-A product customizer for personalised, thermal-receipt-style marathon prints. Prototype: customizer, live preview and a placeholder order summary. Payments and fulfilment are not connected.
+A product customizer for personalised, thermal-receipt-style marathon prints, with Shopify checkout. Buyers design a receipt, pay on Shopify's hosted checkout, and a worker renders the 300 DPI print file. Fulfilment is a stub.
+
+**Setting up Shopify and placing a test order:** [docs/shopify-setup.md](docs/shopify-setup.md)
 
 ```bash
 npm install
 npm run dev        # http://localhost:3000
-npm test           # Vitest: state, time, barcode, dither
+npm run worker     # renders paid receipts (needs `npx playwright install chromium` once)
+npm test           # Vitest: state, time, barcode, dither, HMAC, webhook dedupe, receipt lookup
 npm run typecheck
 npm run lint
 ```
@@ -40,6 +43,15 @@ After every change the strip's natural height is measured. If it is taller than
 the sheet allows, the strip is scaled down to fit and a warning is shown; below
 75% checkout is blocked. The preview and `/print` render the same components,
 so the proof matches the preview.
+
+## Checkout flow
+
+1. **Secure checkout** posts the design to `POST /api/checkout`. The server saves it (SQLite), keeps the dithered photo in `storage/`, finds the Shopify variant for the size and finish, and calls `cartCreate` with the Headless channel's private token. Only the receipt ID goes to Shopify, as the line attribute `_receipt_id`.
+2. The browser does a full-page redirect to the cart's `checkoutUrl`. Shopify takes payment and tax.
+3. Shopify sends `orders/paid` to `/api/webhooks/shopify/orders-paid`. The handler verifies the HMAC on the raw body (constant-time), skips repeat deliveries by `X-Shopify-Webhook-Id`, marks the receipt paid, queues a render job and returns 200.
+4. `npm run worker` screenshots the signed internal `/render/[id]` page with headless Chromium at print size × 300 DPI, writes the PNG and a packing slip, and calls the fulfilment stub (`lib/server/fulfillment.ts`).
+
+Server code lives in `lib/server/` (marked `server-only`); secrets are read only from environment variables there.
 
 ## Plugging in real routes
 

@@ -2,14 +2,29 @@
 
 import { Check } from "lucide-react";
 import { useReceipt, useReceiptDispatch } from "./ReceiptProvider";
+import { priceDisplay } from "./price";
 import { Segmented } from "./ui";
-import { FRAME_COLORS, FRAME_OPTIONS, formatPrice, PRINT_SIZES } from "@/lib/print-sizes";
+import { useCatalog, variantFor } from "./useCatalog";
+import { formatMoney } from "@/lib/catalog";
+import { FRAME_COLORS, FRAME_OPTIONS, PRINT_SIZES } from "@/lib/print-sizes";
 import type { FrameColor, FrameOption, PrintSize, SpotInk } from "@/lib/receipt-state";
 import { SPOT_INKS } from "@/lib/tokens";
 
 export function PrintOptions() {
   const { print } = useReceipt();
   const dispatch = useReceiptDispatch();
+  const catalog = useCatalog();
+
+  /** "+$60" relative to unframed at the current size, from Shopify when available. */
+  const finishExtra = (frame: FrameOption): string => {
+    if (frame === "none") return "";
+    if (catalog.status !== "ready") return ` +$${FRAME_OPTIONS[frame].price}`;
+    const base = variantFor(catalog, { ...print, frame: "none" });
+    const option = variantFor(catalog, { ...print, frame });
+    if (!base || !option) return "";
+    const diff = Number(option.price.amount) - Number(base.price.amount);
+    return diff > 0 ? ` +${formatMoney({ amount: String(diff), currencyCode: option.price.currencyCode })}` : "";
+  };
 
   return (
     <div className="space-y-5">
@@ -36,7 +51,12 @@ export function PrintOptions() {
                   style={{ width: s.widthIn * 2.6, height: s.heightIn * 2.6 }}
                 />
                 <span className="text-sm font-medium">{s.label}</span>
-                <span className="font-mono text-xs text-ink-soft">{formatPrice(s.price)}</span>
+                <span className="font-mono text-xs text-ink-soft">
+                  {(() => {
+                    const p = priceDisplay(catalog, { ...print, size });
+                    return p.available ? p.label : "Sold out";
+                  })()}
+                </span>
                 {active && <Check size={14} className="absolute top-2 right-2" aria-hidden />}
               </button>
             );
@@ -51,7 +71,7 @@ export function PrintOptions() {
           value={print.frame}
           options={(Object.keys(FRAME_OPTIONS) as FrameOption[]).map((value) => ({
             value,
-            label: `${FRAME_OPTIONS[value].label}${FRAME_OPTIONS[value].price ? ` +$${FRAME_OPTIONS[value].price}` : ""}`,
+            label: `${FRAME_OPTIONS[value].label}${finishExtra(value)}`,
           }))}
           onChange={(frame) => dispatch({ type: "setPrint", patch: { frame } })}
         />

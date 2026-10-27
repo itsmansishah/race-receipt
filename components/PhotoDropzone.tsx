@@ -97,7 +97,8 @@ export function PhotoDropzone() {
         <span>
           I took this photo or have permission to use it, and anyone in it is OK with being printed.
           <span className="block text-xs text-ink-soft">
-            Race photographers usually own their photos. We only keep the dotted version, never your original.
+            Race photographers usually own their photos. Your original never leaves this device: we keep only the
+            dotted version, to print your order, and delete it 90 days after it ships.
           </span>
         </span>
       </label>

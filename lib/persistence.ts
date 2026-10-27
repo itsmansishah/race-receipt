@@ -96,3 +96,33 @@ export function loadPhoto(): DitheredPhoto | null {
 export function savePhoto(photo: DitheredPhoto | null) {
   safeSet(() => sessionStorage, PHOTO_KEY, photo ? JSON.stringify(photo) : null);
 }
+
+// ---- Checkout in progress -------------------------------------------------
+// Remembers the saved receipt so a buyer who leaves Shopify's checkout can
+// pick up where they left off, and a retry reuses the same receipt.
+
+const CHECKOUT_KEY = "race-receipt:checkout:v1";
+
+export interface PendingCheckout {
+  receiptId: string;
+  startedAt: string;
+}
+
+export function loadPendingCheckout(): PendingCheckout | null {
+  const json = safeGet(() => localStorage, CHECKOUT_KEY);
+  if (!json) return null;
+  try {
+    const value = JSON.parse(json) as PendingCheckout;
+    return typeof value.receiptId === "string" ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePendingCheckout(receiptId: string) {
+  safeSet(() => localStorage, CHECKOUT_KEY, JSON.stringify({ receiptId, startedAt: new Date().toISOString() }));
+}
+
+export function clearPendingCheckout() {
+  safeSet(() => localStorage, CHECKOUT_KEY, null);
+}

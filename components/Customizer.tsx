@@ -6,15 +6,18 @@ import { CustomizerForm } from "./CustomizerForm";
 import { OrderSummaryModal } from "./OrderSummaryModal";
 import { ReceiptPreview } from "./ReceiptPreview";
 import { useReceipt } from "./ReceiptProvider";
+import { ResumeBanner } from "./ResumeBanner";
+import { priceDisplay } from "./price";
 import { useStripFit } from "./receipt/useStripFit";
-import { formatPrice, PRINT_SIZES, priceBreakdown } from "@/lib/print-sizes";
+import { useCatalog } from "./useCatalog";
+import { PRINT_SIZES } from "@/lib/print-sizes";
 
 export function Customizer() {
   const state = useReceipt();
   const { fit, naturalHeight, onMeasure, fullSizeFit } = useStripFit(state.print.size);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const blocked = fit.status === "too-long";
-  const price = priceBreakdown(state.print);
+  const price = priceDisplay(useCatalog(), state.print);
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -28,6 +31,7 @@ export function Customizer() {
         </div>
         <div aria-hidden className="hazard h-1.5 opacity-90" />
       </header>
+      <ResumeBanner />
 
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-6 px-4 pt-5 pb-28 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-10 lg:pb-10">
         <div id="preview" className="lg:sticky lg:top-0 lg:order-2 lg:h-dvh lg:py-5">
@@ -48,9 +52,13 @@ export function Customizer() {
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-panel/95 backdrop-blur lg:static lg:border-t-0 lg:bg-transparent">
         <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6 lg:justify-end lg:pb-8">
           <div className="min-w-0 flex-1 lg:flex-none lg:text-right">
-            <p className="font-mono text-base font-bold">{formatPrice(price.total)}</p>
+            <p className="font-mono text-base font-bold">{price.label}</p>
             <p className="truncate text-xs text-ink-soft">
-              {blocked ? "Too long for this size" : `${PRINT_SIZES[state.print.size].label} · plus shipping`}
+              {blocked
+                ? "Too long for this size"
+                : !price.available
+                  ? "Sold out in this finish"
+                  : `${PRINT_SIZES[state.print.size].label} · plus shipping`}
             </p>
           </div>
           <a
